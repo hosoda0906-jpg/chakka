@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>CHAKKA | 着火アプリ</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a0a;
+      --surface: #141414;
+      --surface2: #1e1e1e;
+      --fire: #ff4d00;
+      --fire2: #ff8c00;
+      --gold: #ffd000;
+      --text: #f0f0f0;
+      --muted: #888;
+      --border: #2a2a2a;
+      --green: #00c48c;
+      --radius: 16px;
+    }
+
+    body {
+      font-family: 'Noto Sans JP', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      max-width: 430px;
+      margin: 0 auto;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* NAV */
+    .nav {
+      position: fixed;
+      bottom: 0; left: 50%; transform: translateX(-50%);
+      width: 100%; max-width: 430px;
+      background: rgba(10,10,10,0.95);
+      backdrop-filter: blur(20px);
+      border-top: 1px solid var(--border);
+      display: flex;
+      z-index: 100;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    .nav-btn {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; gap: 4px;
+      padding: 12px 0;
+      background: none; border: none;
+      color: var(--muted); font-size: 10px;
+      font-family: 'Noto Sans JP', sans-serif;
+      cursor: pointer; transition: color .2s;
+    }
+    .nav-btn.active { color: var(--fire); }
+    .nav-btn svg { width: 22px; height: 22px; }
+
+    /* PAGES */
+    .page { display: none; padding: 0 0 90px; min-height: 100vh; }
+    .page.active { display: block; }
+
+    /* HEADER */
+    .header {
+      padding: 56px 20px 20px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .header h1 { font-size: 28px; font-weight: 900; letter-spacing: -0.5px; }
+    .header h1 span { color: var(--fire); }
+
+    /* HOME PAGE */
+    .flame-hero {
+      text-align: center;
+      padding: 32px 20px 24px;
+    }
+    .flame-emoji { font-size: 72px; line-height: 1; display: block; animation: flicker 2s ease-in-out infinite; }
+    @keyframes flicker {
+      0%,100% { transform: scale(1) rotate(-2deg); filter: drop-shadow(0 0 20px #ff4d0088); }
+      50% { transform: scale(1.05) rotate(2deg); filter: drop-shadow(0 0 40px #ff8c0088); }
+    }
+    .flame-title { font-size: 13px; color: var(--muted); margin-top: 12px; letter-spacing: 2px; text-transform: uppercase; }
+
+    .mode-section { padding: 8px 20px; }
+    .mode-section h2 { font-size: 13px; color: var(--muted); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 12px; }
+
+    .mode-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 12px;
+      cursor: pointer;
+      transition: all .2s;
+      display: flex; align-items: center; gap: 16px;
+    }
+    .mode-card:active { transform: scale(0.98); }
+    .mode-card:hover { border-color: var(--fire); }
+    .mode-icon { font-size: 36px; flex-shrink: 0; }
+    .mode-info { flex: 1; }
+    .mode-label { font-size: 11px; color: var(--fire); font-weight: 700; letter-spacing: 1.5px; margin-bottom: 4px; }
+    .mode-title { font-size: 17px; font-weight: 700; margin-bottom: 4px; }
+    .mode-desc { font-size: 13px; color: var(--muted); line-height: 1.5; }
+    .mode-arrow { color: var(--muted); font-size: 20px; }
+
+    /* VIDEO PAGE */
+    .video-list { padding: 0 20px; }
+    .video-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 12px;
+      cursor: pointer;
+      transition: all .2s;
+      display: flex; align-items: center; gap: 14px;
+    }
+    .video-card:hover { border-color: var(--fire); }
+    .video-thumb {
+      width: 60px; height: 60px;
+      background: var(--surface2);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px; flex-shrink: 0;
+    }
+    .video-meta { flex: 1; }
+    .video-tag {
+      display: inline-block; font-size: 10px; font-weight: 700;
+      padding: 2px 8px; border-radius: 20px; margin-bottom: 6px;
+      letter-spacing: 1px;
+    }
+    .tag-a { background: rgba(255,77,0,0.15); color: var(--fire); }
+    .tag-b { background: rgba(0,196,140,0.15); color: var(--green); }
+    .video-title { font-size: 15px; font-weight: 700; margin-bottom: 2px; }
+    .video-duration { font-size: 12px; color: var(--muted); }
+
+    /* VIDEO DETAIL */
+    .video-detail { padding: 0 20px; }
+    .yt-embed {
+      width: 100%; aspect-ratio: 16/9;
+      border-radius: var(--radius);
+      overflow: hidden; margin-bottom: 20px;
+      background: #000;
+    }
+    .yt-embed iframe { width: 100%; height: 100%; border: none; }
+    .detail-title { font-size: 22px; font-weight: 900; margin-bottom: 8px; }
+    .detail-meta { display: flex; gap: 10px; margin-bottom: 20px; }
+    .detail-badge {
+      font-size: 11px; font-weight: 700; padding: 4px 12px;
+      border-radius: 20px; letter-spacing: 1px;
+    }
+
+    /* IGNITE BUTTON */
+    .ignite-btn {
+      width: 100%; padding: 18px;
+      background: linear-gradient(135deg, var(--fire), var(--fire2));
+      border: none; border-radius: var(--radius);
+      color: #fff; font-size: 18px; font-weight: 900;
+      font-family: 'Noto Sans JP', sans-serif;
+      cursor: pointer; letter-spacing: 1px;
+      transition: all .2s;
+      box-shadow: 0 4px 24px rgba(255,77,0,0.4);
+      margin-top: 24px;
+    }
+    .ignite-btn:active { transform: scale(0.97); box-shadow: 0 2px 12px rgba(255,77,0,0.3); }
+
+    /* AI FEEDBACK */
+    .feedback-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px; margin-top: 16px;
+      display: none;
+    }
+    .feedback-box.show { display: block; animation: fadeIn .4s ease; }
+    @keyframes fadeIn { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform: translateY(0); } }
+    .feedback-label { font-size: 11px; color: var(--fire); font-weight: 700; letter-spacing: 1.5px; margin-bottom: 10px; }
+    .feedback-text { font-size: 15px; line-height: 1.8; color: var(--text); }
+    .feedback-loading { color: var(--muted); font-size: 14px; }
+
+    /* VOICE INPUT */
+    .voice-section { margin-top: 20px; }
+    .voice-label { font-size: 13px; color: var(--muted); margin-bottom: 10px; }
+    .voice-input {
+      width: 100%; padding: 14px 16px;
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 12px; color: var(--text); font-size: 14px;
+      font-family: 'Noto Sans JP', sans-serif;
+      resize: none; outline: none; transition: border-color .2s;
+      min-height: 80px;
+    }
+    .voice-input:focus { border-color: var(--fire); }
+
+    /* POINTS PAGE */
+    .points-hero {
+      margin: 0 20px 20px;
+      background: linear-gradient(135deg, #1a0a00, #2a1000);
+      border: 1px solid rgba(255,77,0,0.3);
+      border-radius: 20px; padding: 32px 24px; text-align: center;
+    }
+    .points-num {
+      font-family: 'Space Mono', monospace;
+      font-size: 72px; font-weight: 700;
+      color: var(--gold); line-height: 1;
+      text-shadow: 0 0 40px rgba(255,208,0,0.4);
+    }
+    .points-label { font-size: 13px; color: var(--muted); margin-top: 8px; letter-spacing: 2px; }
+    .points-sub { font-size: 13px; color: var(--muted); margin-top: 16px; }
+    .points-sub span { color: var(--fire); font-weight: 700; }
+
+    .points-actions { padding: 0 20px; }
+    .record-btn {
+      width: 100%; padding: 18px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); color: var(--text);
+      font-size: 15px; font-weight: 700;
+      font-family: 'Noto Sans JP', sans-serif;
+      cursor: pointer; transition: all .2s; margin-bottom: 12px;
+    }
+    .record-btn:hover { border-color: var(--fire); }
+
+    .history-section { padding: 0 20px; margin-top: 24px; }
+    .history-title { font-size: 13px; color: var(--muted); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 12px; }
+    .history-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 0; border-bottom: 1px solid var(--border);
+    }
+    .history-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--fire); flex-shrink: 0; }
+    .history-date { font-size: 13px; color: var(--muted); flex: 1; }
+    .history-pt { font-size: 14px; font-weight: 700; color: var(--gold); font-family: 'Space Mono', monospace; }
+
+    /* COUPONS PAGE */
+    .coupon-card {
+      margin: 0 20px 14px;
+      border-radius: var(--radius); overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .coupon-header {
+      padding: 16px 20px;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .coupon-header.discount { background: linear-gradient(135deg, #1a0500, #2d0f00); }
+    .coupon-header.extension { background: linear-gradient(135deg, #001a10, #002d1f); }
+    .coupon-emoji { font-size: 28px; }
+    .coupon-type { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; }
+    .coupon-type.discount { color: var(--fire); }
+    .coupon-type.extension { color: var(--green); }
+    .coupon-value { font-size: 22px; font-weight: 900; color: var(--text); }
+    .coupon-body { padding: 12px 20px; background: var(--surface); }
+    .coupon-info { font-size: 12px; color: var(--muted); display: flex; justify-content: space-between; }
+    .coupon-used { opacity: 0.4; }
+
+    /* TOAST */
+    .toast {
+      position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-80px);
+      background: var(--green); color: #000;
+      padding: 12px 24px; border-radius: 100px;
+      font-size: 14px; font-weight: 700;
+      transition: transform .3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      z-index: 200; white-space: nowrap;
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+
+    /* BACK BTN */
+    .back-btn {
+      background: none; border: none; color: var(--muted);
+      font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 6px;
+      padding: 0; font-family: 'Noto Sans JP', sans-serif;
+    }
+    .back-btn:hover { color: var(--text); }
+
+    /* UTIL */
+    .divider { height: 1px; background: var(--border); margin: 0 20px 20px; }
+    .empty-state { text-align: center; padding: 60px 20px; color: var(--muted); font-size: 14px; }
+  </style>
+</head>
+<body>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- HOME PAGE -->
+<div class="page active" id="page-home">
+  <div class="flame-hero">
+    <span class="flame-emoji">🔥</span>
+    <div class="flame-title">今日も着火しよう</div>
+  </div>
+  <div class="mode-section">
+    <h2>モードを選ぶ</h2>
+    <div class="mode-card" onclick="showModeVideos('A')">
+      <div class="mode-icon">🚶</div>
+      <div class="mode-info">
+        <div class="mode-label">MODE A</div>
+        <div class="mode-title">15分前コース</div>
+        <div class="mode-desc">移動中・歩きながら聴く</div>
+      </div>
+      <div class="mode-arrow">›</div>
+    </div>
+    <div class="mode-card" onclick="showModeVideos('B')">
+      <div class="mode-icon">💺</div>
+      <div class="mode-info">
+        <div class="mode-label">MODE B</div>
+        <div class="mode-title">3分前コース</div>
+        <div class="mode-desc">デスク着席直前・映像で予熱</div>
+      </div>
+      <div class="mode-arrow">›</div>
+    </div>
+  </div>
+</div>
+
+<!-- VIDEOS LIST PAGE -->
+<div class="page" id="page-videos">
+  <div class="header">
+    <button class="back-btn" onclick="showPage('home')">← 戻る</button>
+    <span id="mode-label-header" style="font-size:13px;color:var(--muted)"></span>
+  </div>
+  <div class="video-list" id="video-list"></div>
+</div>
+
+<!-- VIDEO DETAIL PAGE -->
+<div class="page" id="page-detail">
+  <div class="header" style="padding-top:20px">
+    <button class="back-btn" onclick="goBackFromDetail()">← 戻る</button>
+  </div>
+  <div class="video-detail">
+    <div class="yt-embed" id="yt-embed"></div>
+    <div class="detail-title" id="detail-title"></div>
+    <div class="detail-meta" id="detail-meta"></div>
+    <div class="voice-section">
+      <div class="voice-label">今日の意気込みを入力してください</div>
+      <textarea class="voice-input" id="voice-input" placeholder="例：今日は数学の微分を3問やり切ります"></textarea>
+    </div>
+    <button class="ignite-btn" onclick="handleIgnite()">🔥 着火完了！</button>
+    <div class="feedback-box" id="feedback-box">
+      <div class="feedback-label">AI コーチより</div>
+      <div class="feedback-text" id="feedback-text"></div>
+    </div>
+  </div>
+</div>
+
+<!-- POINTS PAGE -->
+<div class="page" id="page-points">
+  <div class="header">
+    <h1>ポイント<span>.</span></h1>
+  </div>
+  <div class="points-hero">
+    <div class="points-num" id="points-display">0</div>
+    <div class="points-label">BALANCE PT</div>
+    <div class="points-sub">累計 <span id="total-display">0</span> pt 獲得 ／ 10ptでクーポン発行</div>
+  </div>
+  <div class="points-actions">
+    <button class="record-btn" onclick="showPage('home')">🔥 今日の動画を見て着火する</button>
+  </div>
+  <div class="history-section">
+    <div class="history-title">着火履歴</div>
+    <div id="history-list"></div>
+  </div>
+</div>
+
+<!-- COUPONS PAGE -->
+<div class="page" id="page-coupons">
+  <div class="header">
+    <h1>クーポン<span>.</span></h1>
+  </div>
+  <div id="coupon-list"></div>
+</div>
+
+<!-- BOTTOM NAV -->
+<nav class="nav">
+  <button class="nav-btn active" onclick="showPage('home')" id="nav-home">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>
+    ホーム
+  </button>
+  <button class="nav-btn" onclick="showPage('points')" id="nav-points">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26 12,2"/></svg>
+    ポイント
+  </button>
+  <button class="nav-btn" onclick="showPage('coupons')" id="nav-coupons">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+    クーポン
+  </button>
+</nav>
+
+<script>
+// ── CONFIG ──────────────────────────────────
+const GEMINI_API_KEY = "YOUR_GEMINI_API_KEY"; // ← ここにAPIキーを入れる
+const SHEET_ID = "YOUR_SHEET_ID"; // ← スプレッドシートIDを入れる
+
+// ── STATE ────────────────────────────────────
+let currentMode = 'A';
+let state = {
+  points: JSON.parse(localStorage.getItem('chakka_points') || '{"balance":0,"total":0}'),
+  history: JSON.parse(localStorage.getItem('chakka_history') || '[]'),
+  coupons: JSON.parse(localStorage.getItem('chakka_coupons') || '[]'),
+};
+
+// サンプル動画データ（後でスプレッドシートから取得に変更可）
+const videos = [
+  { id: "dQw4w9WgXcQ", mode: "A", subject: "数学", duration: 900, coach: "coach_01", note: "移動中向け・集中導入" },
+  { id: "aBcDeFgHiJk", mode: "B", subject: "英語", duration: 180, coach: "coach_01", note: "デスク前3分予熱" },
+  { id: "xYzLmNoPqRs", mode: "A", subject: "国語", duration: 840, coach: "coach_02", note: "読解力トレーニング" },
+];
+
+// ── NAVIGATION ──────────────────────────────
+function showPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  const navBtn = document.getElementById('nav-' + page);
+  if (navBtn) navBtn.classList.add('active');
+
+  if (page === 'points') renderPoints();
+  if (page === 'coupons') renderCoupons();
+}
+
+function showModeVideos(mode) {
+  currentMode = mode;
+  document.getElementById('mode-label-header').textContent = mode === 'A' ? 'MODE A｜15分前コース' : 'MODE B｜3分前コース';
+  renderVideoList(mode);
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-videos').classList.add('active');
+}
+
+function goBackFromDetail() {
+  document.getElementById('feedback-box').classList.remove('show');
+  document.getElementById('voice-input').value = '';
+  showModeVideos(currentMode);
+}
+
+// ── VIDEO LIST ───────────────────────────────
+function renderVideoList(mode) {
+  const list = document.getElementById('video-list');
+  const filtered = videos.filter(v => v.mode === mode);
+  list.innerHTML = filtered.map(v => `
+    <div class="video-card" onclick="showDetail('${v.id}')">
+      <div class="video-thumb">${mode === 'A' ? '🎧' : '▶️'}</div>
+      <div class="video-meta">
+        <span class="video-tag tag-${mode.toLowerCase()}">${mode === 'A' ? '15分前' : '3分前'}</span>
+        <div class="video-title">${v.subject}</div>
+        <div class="video-duration">${Math.floor(v.duration/60)}分 ／ ${v.note}</div>
+      </div>
+      <div style="color:var(--muted);font-size:20px">›</div>
+    </div>
+  `).join('');
+}
+
+// ── VIDEO DETAIL ─────────────────────────────
+function showDetail(videoId) {
+  const v = videos.find(v => v.id === videoId);
+  if (!v) return;
+
+  document.getElementById('yt-embed').innerHTML = `<iframe src="https://www.youtube.com/embed/${v.id}?autoplay=1" allowfullscreen allow="autoplay"></iframe>`;
+  document.getElementById('detail-title').textContent = v.subject;
+  document.getElementById('detail-meta').innerHTML = `
+    <span class="detail-badge tag-${v.mode.toLowerCase()}">${v.mode === 'A' ? '15分前コース' : '3分前コース'}</span>
+    <span class="detail-badge" style="background:var(--surface2);color:var(--muted)">${Math.floor(v.duration/60)}分</span>
+  `;
+  document.getElementById('feedback-box').classList.remove('show');
+  document.getElementById('voice-input').value = '';
+  document.getElementById('page-detail').dataset.videoId = videoId;
+
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-detail').classList.add('active');
+}
+
+// ── IGNITE ───────────────────────────────────
+async function handleIgnite() {
+  const voiceInput = document.getElementById('voice-input').value.trim();
+  if (!voiceInput) {
+    showToast('今日の意気込みを入力してください', '#ff4d00');
+    return;
+  }
+
+  // ポイント加算
+  state.points.total += 1;
+  state.points.balance += 1;
+  state.history.unshift({ date: new Date().toLocaleDateString('ja-JP'), pt: 1 });
+  saveState();
+
+  // クーポン発行チェック
+  if (state.points.balance >= 10) {
+    state.points.balance -= 10;
+    state.coupons.push({
+      type: 'discount', value: 2000,
+      issued: new Date().toLocaleDateString('ja-JP'),
+      expires: new Date(Date.now() + 30*24*60*60*1000).toLocaleDateString('ja-JP'),
+      used: false
+    });
+    saveState();
+    showToast('🎟 10pt達成！クーポンを発行しました');
+  } else {
+    showToast('🔥 着火完了！+1pt');
+  }
+
+  // AI フィードバック
+  const box = document.getElementById('feedback-box');
+  const text = document.getElementById('feedback-text');
+  box.classList.add('show');
+  text.innerHTML = '<span class="feedback-loading">AIコーチが返答を考えています...</span>';
+
+  try {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{
+          parts: [{
+            text: `あなたは学習コーチです。ユーザーが今日の勉強前に話した「意気込み」を受け取り、以下のルールで返答してください。
+【ルール】
+- 返答は3〜5文、100〜150字以内
+- 必ず肯定から入る
+- ユーザーの言葉を1つ以上引用して共鳴する
+- 最後は行動促進フレーズで締める
+- 説教・アドバイス・追加タスクの提案は一切しない
+- 絵文字は使わない
+
+ユーザーの発話：${voiceInput}`
+          }]
+        }]
+      })
+    });
+    const data = await res.json();
+    text.textContent = data.candidates[0].content.parts[0].text;
+  } catch(e) {
+    text.textContent = 'その気持ち、しっかり受け取りました。では、始めましょう。';
+  }
+}
+
+// ── POINTS ───────────────────────────────────
+function renderPoints() {
+  document.getElementById('points-display').textContent = state.points.balance;
+  document.getElementById('total-display').textContent = state.points.total;
+  const list = document.getElementById('history-list');
+  if (state.history.length === 0) {
+    list.innerHTML = '<div class="empty-state">まだ着火記録がありません</div>';
+    return;
+  }
+  list.innerHTML = state.history.slice(0,20).map(h => `
+    <div class="history-item">
+      <div class="history-dot"></div>
+      <div class="history-date">${h.date}</div>
+      <div class="history-pt">+${h.pt}pt</div>
+    </div>
+  `).join('');
+}
+
+// ── COUPONS ──────────────────────────────────
+function renderCoupons() {
+  const list = document.getElementById('coupon-list');
+  if (state.coupons.length === 0) {
+    list.innerHTML = '<div class="empty-state">10pt貯まるとクーポンが発行されます</div>';
+    return;
+  }
+  list.innerHTML = state.coupons.map((c,i) => `
+    <div class="coupon-card ${c.used ? 'coupon-used' : ''}">
+      <div class="coupon-header ${c.type}">
+        <div class="coupon-emoji">${c.type === 'discount' ? '🎟' : '⏰'}</div>
+        <div>
+          <div class="coupon-type ${c.type}">${c.type === 'discount' ? '割引クーポン' : '時間延長クーポン'}</div>
+          <div class="coupon-value">${c.type === 'discount' ? '¥' + c.value.toLocaleString() + ' 割引' : c.value + '分 延長'}</div>
+        </div>
+        ${c.used ? '<div style="margin-left:auto;font-size:11px;color:var(--muted)">使用済み</div>' : ''}
+      </div>
+      <div class="coupon-body">
+        <div class="coupon-info">
+          <span>発行日：${c.issued}</span>
+          <span>有効期限：${c.expires}</span>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ── UTILS ────────────────────────────────────
+function saveState() {
+  localStorage.setItem('chakka_points', JSON.stringify(state.points));
+  localStorage.setItem('chakka_history', JSON.stringify(state.history));
+  localStorage.setItem('chakka_coupons', JSON.stringify(state.coupons));
+}
+
+function showToast(msg, color) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.background = color || 'var(--green)';
+  t.style.color = color ? '#fff' : '#000';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// 初期化
+renderPoints();
+renderCoupons();
+</script>
+</body>
+</html>
