@@ -384,7 +384,7 @@
 
 <script>
 // ── CONFIG ──────────────────────────────────
-const GEMINI_API_KEY = "YOUR_GEMINI_API_KEY"; // ← ここにAPIキーを入れる
+const GEMINI_API_KEY = "AIzaSyAoQduzsdnTC_SwfrkRlu5GuYmdxZamQFs"; // ← ここにAPIキーを入れる
 const SHEET_ID = "YOUR_SHEET_ID"; // ← スプレッドシートIDを入れる
 
 // ── STATE ────────────────────────────────────
@@ -500,8 +500,8 @@ async function handleIgnite() {
   text.innerHTML = '<span class="feedback-loading">AIコーチが返答を考えています...</span>';
 
   try {
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbwCMWlyA1TBNcTHCL-2Y5g26aVZ1dukg-3YZ-uUfQ0KRs6W36BHZ50lwz24n_kTUmgrVQ/exec";
-    const res = await fetch(GAS_URL, {
+    const GEMINI_API_KEY = "AIzaSyAoQduzsdnTC_SwfrkRlu5GuYmdxZamQFs"; // ← APIキーをここに入れる
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
