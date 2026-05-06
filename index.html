@@ -500,7 +500,7 @@ async function handleIgnite() {
   text.innerHTML = '<span class="feedback-loading">AIコーチが返答を考えています...</span>';
 
   try {
-    const GEMINI_API_KEY = "AIzaSyAoQduzsdnTC_SwfrkRlu5GuYmdxZamQFs"; // ← APIキーをここに入れる
+    const GEMINI_API_KEY = "AIzaSyBA8PDebkTZ1fKPN3KqsWZGBk2hP8ouzcU"; // ← APIキーをここに入れる
     const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
